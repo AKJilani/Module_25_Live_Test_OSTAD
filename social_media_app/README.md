@@ -43,7 +43,7 @@ A Django-based social media platform that allows users to create, read, update, 
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/AKJilani/SocialAPP.git
+   git clone https://github.com/AKJilani/Module_25_Live_Test_OSTAD.git
    cd SocialAPP
    ```
 
