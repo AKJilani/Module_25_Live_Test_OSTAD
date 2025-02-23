@@ -1,0 +1,504 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home{% endblock %}
+
+{% block styles %}
+<style>
+    :root {
+        --fb-bg: #f0f2f5;
+        --fb-blue: #1877f2;
+        --fb-hover: #e4e6eb;
+    }
+
+    body {
+        background-color: var(--fb-bg);
+    }
+
+    .post-card {
+        background: #fff;
+        border: none;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .post-header {
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .post-user {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .post-profile-pic {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .post-author {
+        font-weight: 600;
+        color: #050505;
+        text-decoration: none;
+    }
+
+    .post-author:hover {
+        text-decoration: underline;
+    }
+
+    .post-time {
+        font-size: 13px;
+        color: #65676b;
+    }
+
+    .post-content {
+        padding: 4px 16px 16px;
+        font-size: 15px;
+        color: #050505;
+    }
+
+    .post-image-container {
+        position: relative;
+        width: 100%;
+        max-height: 500px;
+        overflow: hidden;
+    }
+
+    .post-image {
+        width: 100%;
+        max-height: 500px;
+        object-fit: contain;
+    }
+
+    .post-stats {
+        padding: 10px 16px;
+        border-bottom: 1px solid #ced0d4;
+        color: #65676b;
+        font-size: 15px;
+    }
+
+    .post-actions {
+        display: flex;
+        padding: 4px 16px;
+        border-bottom: 1px solid #ced0d4;
+    }
+
+    .action-btn {
+        flex: 1;
+        border: none;
+        background: none;
+        padding: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #65676b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .action-btn:hover {
+        background-color: var(--fb-hover);
+        border-radius: 4px;
+    }
+
+    .action-btn.active {
+        color: var(--fb-blue);
+    }
+
+    .comment-section {
+        padding: 8px 16px;
+    }
+
+    .comment-input-container {
+        display: flex;
+        gap: 8px;
+        padding: 8px 0;
+    }
+
+    .comment-input {
+        flex: 1;
+        border: none;
+        background-color: var(--fb-bg);
+        border-radius: 20px;
+        padding: 8px 12px;
+        font-size: 15px;
+    }
+
+    .comment-input:focus {
+        outline: none;
+    }
+
+    .pagination {
+        margin-top: 20px;
+    }
+
+    .pagination .page-link {
+        color: var(--fb-blue);
+        border-radius: 4px;
+        margin: 0 2px;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: var(--fb-blue);
+        border-color: var(--fb-blue);
+    }
+
+    .search-all-items {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .filter-group select {
+        border-radius: 8px;
+        padding: 8px;
+        font-size: 15px;
+        color: #050505;
+        max-width: 200px;        
+    }
+
+    .search-input-homePage {
+        border-radius: 8px;
+        padding: 8px;
+        font-size: 15px;
+        color: #050505;
+        max-width: 400px;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="filter-section mb-4 p-4 bg-white rounded shadow">
+        <form method="get" class="flex flex-wrap gap-4 search-all-items">
+            <!-- Date Filter -->
+            <div class="filter-group">
+                <label for="date_filter" class="block text-sm font-medium text-gray-700">Sort by Date</label>
+                <select name="date_filter" id="date_filter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="newest" {% if date_filter == 'newest' %}selected{% endif %}>Newest First</option>
+                    <option value="oldest" {% if date_filter == 'oldest' %}selected{% endif %}>Oldest First</option>
+                </select>
+            </div>
+    
+            <!-- Media Type Filter -->
+            <div class="filter-group">
+                <label for="media_type" class="block text-sm font-medium text-gray-700">Media Type</label>
+                <select name="media_type" id="media_type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="" {% if not media_type %}selected{% endif %}>All Posts</option>
+                    <option value="text_only" {% if media_type == 'text_only' %}selected{% endif %}>Text Only</option>
+                    <option value="images" {% if media_type == 'images' %}selected{% endif %}>With Images</option>
+                </select>
+            </div>
+    
+            <!-- User Filter -->
+            <div class="filter-group">
+                <label for="username" class="block text-sm font-medium text-gray-700">Filter by User</label>
+                <select name="username" id="username" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="">All Users</option>
+                    {% for user in users %}
+                        <option value="{{ user.username }}" {% if username_filter == user.username %}selected{% endif %}>
+                            {{ user.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+    
+            <!-- Search Bar -->
+            <div class="search-group flex-grow">
+                <div class="mt-1 flex rounded-md shadow-sm">
+                    <input type="text" name="search" id="search" 
+                           class="flex-1 rounded-md border-gray-300 shadow-sm search-input-homePage"
+                           placeholder="Search posts..."
+                           value="{{ search_query }}">
+                    <button type="submit" style="background-color: #1877f2 !important; border-radius: 10px !important;" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                        Search
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+
+    {% for post in posts %}
+    <div class="post-card">
+        <div class="post-header">
+            <div class="post-user">
+                <img src="{{ post.user.profile.profile_picture.url }}" alt="Profile Picture" class="post-profile-pic">
+                <div>
+                    <a href="{% url 'user_profile' post.user.username %}" class="post-author">{{ post.user.username }}</a>
+                    <div class="post-time">{{ post.created_at|date:"F d, Y, g:i a" }}</div>
+                </div>
+            </div>
+            {% if request.user == post.user %}
+            <div class="dropdown">
+                <button class="btn btn-primary text-dark" style="color: white !important;" type="button"
+                data-bs-toggle="dropdown">
+                Manage Post
+            </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{% url 'post_update' post.id %}">Edit</a></li>
+                    <li><a class="dropdown-item" href="{% url 'post_delete' post.id %}">Delete</a></li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+
+
+        <div class="post-content">
+            <p>{{ post.content|linebreaksbr }}</p>
+        </div>
+
+        {% if post.image %}
+        <div class="post-image-container">
+            <img src="{{ post.image.url }}" alt="Post image" class="post-image">
+        </div>
+        {% endif %}
+
+        <div class="post-stats">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <i class="fas fa-thumbs-up text-primary"></i>
+                    <span class="like-count-{{ post.id }}">{{ post.likes.count }}</span>
+                </div>
+                <div>
+                    <span class="comment-count-{{ post.id }}">{{ post.comments.count }}</span> comments
+                    · {{ post.shares.count }} shares
+                </div>
+            </div>
+        </div>
+
+        <div class="post-actions">
+            {% if request.user.is_authenticated %}
+            <button class="action-btn like-btn {% if request.user in post.likes.all %}active{% endif %}" 
+                    data-post-id="{{ post.id }}">
+                <i class="fas fa-thumbs-up"></i> Like
+            </button>
+            <button class="action-btn comment-btn" data-post-id="{{ post.id }}">
+                <i class="fas fa-comment"></i> Comment
+            </button>
+            {% endif %}
+            <button class="action-btn share-btn" data-bs-toggle="modal" data-bs-target="#shareModal{{ post.id }}">
+                <i class="fas fa-share"></i> Share
+            </button>
+        </div>
+
+        <div class="comment-section" id="comment-section-{{ post.id }}">
+            {% for comment in post.comments.all %}
+            <div class="comment d-flex mb-3" id="comment-{{ comment.id }}">
+                <img src="{{ comment.user.profile.profile_picture.url }}" alt="{{ comment.user.username }}"
+                    class="rounded-circle me-2" style="width: 32px; height: 32px;">
+                <div>
+                    <div class="comment-bubble">
+                        <span class="fw-bold">{{ comment.user.username }}</span>
+                        <span class="comment-content">{{ comment.content }}</span>
+                    </div>
+                    <div class="mt-1">
+                        <small class="text-muted">{{ comment.created_at|date:"M d, g:i a" }}</small>
+                        
+                        {% if request.user.is_authenticated %}
+                            <button class="btn btn-link btn-sm p-0 ms-2">Like</button>
+                            <button class="btn btn-link btn-sm p-0 ms-2">Reply</button>
+                            
+                            {% if request.user == comment.user %}
+                                <button class="btn btn-link btn-sm p-0 ms-2 delete-comment-btn" data-comment-id="{{ comment.id }}">Delete</button>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+            {% if request.user.is_authenticated %}
+            <div class="comment-input-container">
+                <img src="{{ request.user.profile.profile_picture.url }}" alt="Your Profile"
+                    class="rounded-circle" style="width: 32px; height: 32px;">
+                <form method="post" action="{% url 'add_comment' post.id %}" class="comment-form flex-grow-1">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        <input type="text" name="content" class="comment-input" placeholder="Write a comment...">
+                        <button type="submit" class="btn btn-link text-primary">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal fade" id="shareModal{{ post.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Share Post</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                {% if request.user.is_authenticated %}
+                <form method="post" action="{% url 'share_post' post.id %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <textarea class="form-control" name="share_comment" rows="3"
+                                placeholder="What's on your mind?"></textarea>
+                        </div>
+                        <div class="shared-post p-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <img src="{{ post.user.profile.profile_picture.url }}" alt="Profile Picture"
+                                    class="rounded-circle me-2" style="width: 32px; height: 32px;">
+                                <div>
+                                    <div class="fw-bold">{{ post.user.username }}</div>
+                                    <small class="text-muted">{{ post.created_at|date:"F d, Y" }}</small>
+                                </div>
+                            </div>
+                            <p class="mb-2">{{ post.content|truncatechars:100 }}</p>
+                            {% if post.image %}
+                            <img src="{{ post.image.url }}" alt="Post image" class="img-fluid rounded">
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Share Now</button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="modal-body">
+                    <p class="text-center">Please <a href="{% url 'login' %}">log in</a> to share this post.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info">No posts yet. Be the first to post!</div>
+    {% endfor %}
+
+    {% if is_paginated %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">&laquo; First</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Like Button Functionality
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const postId = this.dataset.postId;
+                fetch(`/post/${postId}/like/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.querySelector(`.like-count-${postId}`).textContent = data.like_count;
+                    if (data.action === 'liked') {
+                        this.classList.add('active');
+                    } else {
+                        this.classList.remove('active');
+                    }
+                });
+            });
+        });
+
+        // Comment Form Handling
+        document.querySelectorAll('.comment-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const postId = this.closest('.comment-section').id.split('-')[2];
+                const formData = new FormData(this);
+
+                fetch(`/post/${postId}/comment/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const commentSection = document.getElementById(`comment-section-${postId}`);
+                        const commentInputContainer = commentSection.querySelector('.comment-input-container');
+                        
+                        const newComment = document.createElement('div');
+                        newComment.className = 'comment d-flex mb-3';
+                        newComment.innerHTML = `
+                            <img src="{{ request.user.profile.profile_picture.url }}" alt="{{ request.user.username }}" 
+                                class="rounded-circle me-2" style="width: 32px; height: 32px;">
+                            <div>
+                                                                <div class="comment-bubble">
+                                    <span class="fw-bold">{{ request.user.username }}</span>
+                                    ${data.comment_content}
+                                </div>
+                                <div class="mt-1">
+                                    <small class="text-muted">${data.comment_created_at}</small>
+                                    <button class="btn btn-link btn-sm p-0 ms-2">Like</button>
+                                    <button class="btn btn-link btn-sm p-0 ms-2">Reply</button>
+                                </div>
+                            </div>
+                        </div>`;
+                        
+                        commentSection.insertBefore(newComment, commentInputContainer);
+                        commentSection.querySelector('.comment-input').value = '';  // Clear comment input
+                    }
+                });
+            });
+        });
+    });
+</script>
+<script src="{% static 'js/comments.js' %}"></script>
+{% endblock %}
+{% endblock %}
